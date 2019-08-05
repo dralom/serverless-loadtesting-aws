@@ -5,6 +5,7 @@ except ImportError:
 import json
 import os
 from elasticsearch import Elasticsearch
+from elasticsearch import helpers
 from datetime import datetime
 
 
@@ -18,8 +19,6 @@ def start(event, context):
 
     for record in event["Records"]:
         body = json.loads(record['body'])
-
-        print(body["input"])
 
         responseValue = {}
         responseValue["input"] = body["input"]
@@ -37,16 +36,38 @@ def start(event, context):
         responseValue["stats"]["num_requests_fail"] = int(body["stats"]["num_requests_fail"])
         responseValue["stats"]["start_time"] = datetime.fromtimestamp(body["stats"]["start_time"])
         responseValue["stats"]["end_time"] = datetime.fromtimestamp(body["stats"]["end_time"])
-        responseValue["stats"]["request_type"] = body["stats"]["request_type"]
-        responseValue["stats"]["min_response_time"] = float(body["stats"]["min_response_time"])
-        responseValue["stats"]["median_response_time"] = float(body["stats"]["median_response_time"])
-        responseValue["stats"]["avg_response_time"] = float(body["stats"]["avg_response_time"])
-        responseValue["stats"]["max_response_time"] = float(body["stats"]["max_response_time"])
-        responseValue["stats"]["total_rps"] = float(body["stats"]["total_rps"])
-        responseValue["stats"]["total_rpm"] = float(body["stats"]["total_rps"])
+
+        requests = body["stats"]["requests"]["{}_{}".format(body["input"]["method"], body["input"]["path"])]
+        responseValue["stats"]["request_type"] = requests["request_type"]
+        responseValue["stats"]["min_response_time"] = float(requests["min_response_time"])
+        responseValue["stats"]["median_response_time"] = float(requests["median_response_time"])
+        responseValue["stats"]["avg_response_time"] = float(requests["avg_response_time"])
+        responseValue["stats"]["max_response_time"] = float(requests["max_response_time"])
+        responseValue["stats"]["total_rps"] = float(requests["total_rps"])
+        responseValue["stats"]["total_rpm"] = float(requests["total_rps"])
 
         res = es.index(index=os.environ.get("GLOBAL_INDEX"), doc_type='overall', body=responseValue)
         es.indices.refresh(index=os.environ.get("GLOBAL_INDEX"))
+
+        response_times = []
+        for prop in requests["response_times"]:
+            response_times.append(prop)
+
+        actions = [
+            {
+                "_index": os.environ.get("RESPONSE_TIMES_INDEX"),
+                "_type": "requests",
+                "_source": {
+                    "response_time": float(resp),
+                    "requestId": responseValue["input"]["requestId"],
+                    "threadCount": responseValue["input"]["threadCount"],
+                    "url": responseValue["input"]["url"],
+                    "path": responseValue["input"]["path"]
+                }
+            }
+            for resp in response_times
+        ]
+        helpers.bulk(es, actions)
 
 
 

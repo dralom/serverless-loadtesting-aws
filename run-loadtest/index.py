@@ -257,8 +257,8 @@ def start(event, context):
     client.send_message_batch(
         QueueUrl=queue,
         Entries=[{
-            "Id": body["threadCount"],
-            "MessageBody": responseValue,
+            "Id": threadCount,
+            "MessageBody": json.dumps(responseValue),
             "DelaySeconds": 0
         }]
     )
