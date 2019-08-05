@@ -8,6 +8,7 @@ import json
 import boto3
 import invokust
 from locust import HttpLocust, TaskSet, task
+import os
 
 
 class TaskPostWithBodyAndHeaders(TaskSet):
@@ -237,7 +238,29 @@ def start(event, context):
     stats = loadtest.stats()
 
     print("Finished tests.")
-    print("Global results are:")
-    print(json.dumps(stats))
+    responseValue={
+        "input": {
+            "url": url,
+            "numClients": numClients,
+            "hatchRate": hatchRate,
+            "runTime": runTime,
+            "maxThreads": maxThreads,
+            "requestId": requestId,
+            "threadCount": threadCount,
+            "method": method,
+            "path": path
+        },
+        "stats": stats
+    }
+
+    queue = os.environ.get("PostResultSqsUrl")
+    client.send_message_batch(
+        QueueUrl=queue,
+        Entries=[{
+            "Id": body["threadCount"],
+            "MessageBody": responseValue,
+            "DelaySeconds": 0
+        }]
+    )
 
     return "Done"
