@@ -1,0 +1,13 @@
+\.idea/
+\.serverless/
+venv/
+*.pyc
+\.DS_Store
+node_modules/
+\.env
+\.start.json
+\.results.json
+/.requirements.zip
+results\.json
+
+start\.json

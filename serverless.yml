@@ -1,0 +1,506 @@
+service: loadtesting
+
+custom:
+  pythonRequirements:
+    dockerizePip: true
+    dockerImage: python:3.7
+    usePipenv: false
+    usePoetry: false
+    zip: true
+    strip: false
+    layer: true
+    useDownloadCache: true
+    useStaticCache: true
+
+
+plugins:
+  - serverless-dotenv-plugin
+  - serverless-python-requirements
+
+provider:
+  name: aws
+  runtime: python3.7
+  stage: ${env:STAGE}
+  profile: ${env:AWS_PROFILE_SERVERLESS}
+  memorySize: 3008
+  versionFunctions: true
+  timeout: 300
+  apiKeys:
+    - free:
+        - SomeRandomApiKey
+  usagePlan:
+    - free:
+        quota:
+          limit: 5000
+          offset: 2
+          period: MONTH
+        throttle:
+          burstLimit: 200
+          rateLimit: 100
+  tracing:
+    lambda: true
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - sqs:ChangeMessageVisibility
+        - sqs:DeleteMessage
+        - sqs:GetQueueAttributes
+        - sqs:GetQueueUrl
+        - sqs:ListDeadLetterSourceQueues
+        - sqs:ListQueueTags
+        - sqs:PurgeQueue
+        - sqs:ReceiveMessage
+        - sqs:SendMessage
+        - sqs:SetQueueAttributes
+        - sqs:TagQueue
+        - sqs:UntagQueue
+      Resource:
+        - Fn::GetAtt: NotifySqsQueue.Arn
+        - Fn::GetAtt: PostResultSqsQueue.Arn
+        - Fn::GetAtt: StartLoadTestSqsQueue1.Arn
+        - Fn::GetAtt: StartLoadTestSqsQueue2.Arn
+        - Fn::GetAtt: StartLoadTestSqsQueue3.Arn
+        - Fn::GetAtt: StartLoadTestSqsQueue4.Arn
+        - Fn::GetAtt: StartLoadTestSqsQueue5.Arn
+        - Fn::GetAtt: StartLoadTestSqsQueue6.Arn
+        - Fn::GetAtt: StartLoadTestSqsQueue7.Arn
+        - Fn::GetAtt: StartLoadTestSqsQueue8.Arn
+        - Fn::GetAtt: StartLoadTestSqsQueue9.Arn
+        - Fn::GetAtt: StartLoadTestSqsQueue10.Arn
+    - Effect: Allow
+      Action:
+        - sqs:ListQueues
+        - sqs:GetQueueUrl
+      Resource: '*'
+    - Effect: Allow
+      Action:
+        - sns:CheckIfPhoneNumberIsOptedOut
+        - sns:ConfirmSubscription
+        - sns:CreatePlatformApplication
+        - sns:CreatePlatformEndpoint
+        - sns:List*
+        - sns:Get*
+        - sns:OptInPhoneNumber
+        - sns:Publish
+        - sns:Set*
+        - sns:Subscribe
+        - sns:Unsubscribe
+        - sns:Tag*
+        - sns:Untag*
+      Resource:
+        - Ref: SnsError
+    - Effect: Allow
+      Action:
+        - sns:ListTopics
+        - sns:Get*
+      Resource: '*'
+    - Effect: Allow
+      Action:
+        - cloudwatch:*
+        - logs:*
+      Resource: '*'
+  environment:
+    NotifySqsQueueUrl:
+      Ref: NotifySqsQueue
+    PostResultSqsUrl:
+      Ref: PostResultSqsQueue
+    StartLoadTestSqsQueueUrl1:
+      Ref: StartLoadTestSqsQueue1
+    StartLoadTestSqsQueueUrl2:
+      Ref: StartLoadTestSqsQueue2
+    StartLoadTestSqsQueueUrl3:
+      Ref: StartLoadTestSqsQueue3
+    StartLoadTestSqsQueueUrl4:
+      Ref: StartLoadTestSqsQueue4
+    StartLoadTestSqsQueueUrl5:
+      Ref: StartLoadTestSqsQueue5
+    StartLoadTestSqsQueueUrl6:
+      Ref: StartLoadTestSqsQueue6
+    StartLoadTestSqsQueueUrl7:
+      Ref: StartLoadTestSqsQueue7
+    StartLoadTestSqsQueueUrl8:
+      Ref: StartLoadTestSqsQueue8
+    StartLoadTestSqsQueueUrl9:
+      Ref: StartLoadTestSqsQueue9
+    StartLoadTestSqsQueueUrl10:
+      Ref: StartLoadTestSqsQueue10
+
+package:
+  individually: true
+
+
+functions:
+  post-result:
+    handler: post-result/index.start
+    layers:
+      - {Ref: PythonRequirementsLambdaLayer}
+    vpc:
+      securityGroupIds:
+        - Fn::GetAtt: SecurityGroup.GroupId
+      subnetIds:
+        - ${env:SUBNET_ID_PRIVATE_1}
+        - ${env:SUBNET_ID_PRIVATE_2}
+    onError:
+      Ref: SnsError
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt: PostResultSqsQueue.Arn
+    package:
+      exclude:
+        - ./**
+      include:
+        - post-result/**
+  notify:
+    handler: notify/index.start
+    layers:
+      - {Ref: PythonRequirementsLambdaLayer}
+    onError:
+      Ref: SnsError
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt: NotifySqsQueue.Arn
+    package:
+      exclude:
+        - ./**
+      include:
+        - notify/**
+  start:
+    handler: start/index.start
+    layers:
+      - {Ref: PythonRequirementsLambdaLayer}
+    events:
+      - http:
+          path: start
+          method: post
+          private: true
+    onError:
+      Ref: SnsError
+    package:
+      exclude:
+        - ./**
+      include:
+        - start/**
+  start_load_test_1:
+    handler: run-loadtest/index.start
+    layers:
+      - {Ref: PythonRequirementsLambdaLayer}
+    onError:
+      Ref: SnsError
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt: StartLoadTestSqsQueue1.Arn
+          batchSize: 1
+    package:
+      exclude:
+        - ./**
+      include:
+        - run-loadtest/**
+  start_load_test_2:
+    handler: run-loadtest/index.start
+    layers:
+      - {Ref: PythonRequirementsLambdaLayer}
+    onError:
+      Ref: SnsError
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt: StartLoadTestSqsQueue2.Arn
+          batchSize: 1
+    package:
+      exclude:
+        - ./**
+      include:
+        - run-loadtest/**
+  start_load_test_3:
+    handler: run-loadtest/index.start
+    layers:
+      - {Ref: PythonRequirementsLambdaLayer}
+    onError:
+      Ref: SnsError
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt: StartLoadTestSqsQueue3.Arn
+          batchSize: 1
+    package:
+      exclude:
+        - ./**
+      include:
+        - run-loadtest/**
+  start_load_test_4:
+    handler: run-loadtest/index.start
+    layers:
+      - {Ref: PythonRequirementsLambdaLayer}
+    onError:
+      Ref: SnsError
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt: StartLoadTestSqsQueue4.Arn
+          batchSize: 1
+    package:
+      exclude:
+        - ./**
+      include:
+        - run-loadtest/**
+  start_load_test_5:
+    handler: run-loadtest/index.start
+    layers:
+      - {Ref: PythonRequirementsLambdaLayer}
+    onError:
+      Ref: SnsError
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt: StartLoadTestSqsQueue5.Arn
+          batchSize: 1
+    package:
+      exclude:
+        - ./**
+      include:
+        - run-loadtest/**
+  start_load_test_6:
+    handler: run-loadtest/index.start
+    layers:
+      - {Ref: PythonRequirementsLambdaLayer}
+    onError:
+      Ref: SnsError
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt: StartLoadTestSqsQueue6.Arn
+          batchSize: 1
+    package:
+      exclude:
+        - ./**
+      include:
+        - run-loadtest/**
+  start_load_test_7:
+    handler: run-loadtest/index.start
+    layers:
+      - {Ref: PythonRequirementsLambdaLayer}
+    onError:
+      Ref: SnsError
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt: StartLoadTestSqsQueue7.Arn
+          batchSize: 1
+    package:
+      exclude:
+        - ./**
+      include:
+        - run-loadtest/**
+  start_load_test_8:
+    handler: run-loadtest/index.start
+    layers:
+      - {Ref: PythonRequirementsLambdaLayer}
+    onError:
+      Ref: SnsError
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt: StartLoadTestSqsQueue8.Arn
+          batchSize: 1
+    package:
+      exclude:
+        - ./**
+      include:
+        - run-loadtest/**
+  start_load_test_9:
+    handler: run-loadtest/index.start
+    layers:
+      - {Ref: PythonRequirementsLambdaLayer}
+    onError:
+      Ref: SnsError
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt: StartLoadTestSqsQueue9.Arn
+          batchSize: 1
+    package:
+      exclude:
+        - ./**
+      include:
+        - run-loadtest/**
+  start_load_test_10:
+    handler: run-loadtest/index.start
+    layers:
+      - {Ref: PythonRequirementsLambdaLayer}
+    onError:
+      Ref: SnsError
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt: StartLoadTestSqsQueue10.Arn
+          batchSize: 1
+    package:
+      exclude:
+        - ./**
+      include:
+        - run-loadtest/**
+
+resources:
+  Resources:
+    NotifySqsQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        VisibilityTimeout: 300
+        QueueName:
+          Fn::Join:
+            - '-'
+            -
+              - Ref: AWS::StackName
+              - Notify
+    PostResultSqsQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        VisibilityTimeout: 300
+        QueueName:
+          Fn::Join:
+            - '-'
+            -
+              - Ref: AWS::StackName
+              - PostResult
+    StartLoadTestSqsQueue1:
+      Type: AWS::SQS::Queue
+      Properties:
+        VisibilityTimeout: 300
+        QueueName:
+          Fn::Join:
+            - '-'
+            -
+              - Ref: AWS::StackName
+              - StartLoadTest1
+    StartLoadTestSqsQueue2:
+      Type: AWS::SQS::Queue
+      Properties:
+        VisibilityTimeout: 300
+        QueueName:
+          Fn::Join:
+            - '-'
+            -
+              - Ref: AWS::StackName
+              - StartLoadTest2
+    StartLoadTestSqsQueue3:
+      Type: AWS::SQS::Queue
+      Properties:
+        VisibilityTimeout: 300
+        QueueName:
+          Fn::Join:
+            - '-'
+            -
+              - Ref: AWS::StackName
+              - StartLoadTest3
+    StartLoadTestSqsQueue4:
+      Type: AWS::SQS::Queue
+      Properties:
+        VisibilityTimeout: 300
+        QueueName:
+          Fn::Join:
+            - '-'
+            -
+              - Ref: AWS::StackName
+              - StartLoadTest4
+    StartLoadTestSqsQueue5:
+      Type: AWS::SQS::Queue
+      Properties:
+        VisibilityTimeout: 300
+        QueueName:
+          Fn::Join:
+            - '-'
+            -
+              - Ref: AWS::StackName
+              - StartLoadTest5
+    StartLoadTestSqsQueue6:
+      Type: AWS::SQS::Queue
+      Properties:
+        VisibilityTimeout: 300
+        QueueName:
+          Fn::Join:
+            - '-'
+            -
+              - Ref: AWS::StackName
+              - StartLoadTest6
+    StartLoadTestSqsQueue7:
+      Type: AWS::SQS::Queue
+      Properties:
+        VisibilityTimeout: 300
+        QueueName:
+          Fn::Join:
+            - '-'
+            -
+              - Ref: AWS::StackName
+              - StartLoadTest7
+    StartLoadTestSqsQueue8:
+      Type: AWS::SQS::Queue
+      Properties:
+        VisibilityTimeout: 300
+        QueueName:
+          Fn::Join:
+            - '-'
+            -
+              - Ref: AWS::StackName
+              - StartLoadTest8
+    StartLoadTestSqsQueue9:
+      Type: AWS::SQS::Queue
+      Properties:
+        VisibilityTimeout: 300
+        QueueName:
+          Fn::Join:
+            - '-'
+            -
+              - Ref: AWS::StackName
+              - StartLoadTest9
+    StartLoadTestSqsQueue10:
+      Type: AWS::SQS::Queue
+      Properties:
+        VisibilityTimeout: 300
+        QueueName:
+          Fn::Join:
+            - '-'
+            -
+              - Ref: AWS::StackName
+              - StartLoadTest10
+    SecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription:
+          Fn::Join:
+            - ' '
+            -
+              - Security group created for
+              - Ref: AWS::StackName
+        VpcId: ${env:VPC_ID}
+    SnsError:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName:
+          Fn::Join:
+            - '-'
+            -
+              - Ref: AWS::StackName
+              - SnsError
+    SnsErrorSubscription:
+      Type: AWS::SNS::Subscription
+      Properties:
+        Endpoint:
+          Fn::GetAtt: SqsDeadLetterQueue.Arn
+        Protocol: sqs
+        TopicArn:
+          Ref: SnsError
+        RawMessageDelivery: true
+    SqsDeadLetterQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        VisibilityTimeout: 300
+        QueueName:
+          Fn::Join:
+            - '-'
+            -
+              - Ref: AWS::StackName
+              - SqsDeadLetterQueue
+
