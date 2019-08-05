@@ -45,22 +45,8 @@ def start(event, context):
         responseValue["stats"]["total_rps"] = float(body["stats"]["total_rps"])
         responseValue["stats"]["total_rpm"] = float(body["stats"]["total_rps"])
 
-        now = datetime.now()
-        timestamp = now.strftime('%Y%m%d%H%M%S%fZ')
-
-        # Include timestamp for indice calculation
-        responseValue['timestamp'] = timestamp
-
-        month = now.month
-        if int(now.month) < 10:
-            month = "0" + str(now.month)
-
-        day = now.day
-        if int(now.day) < 10:
-            day = "0" + str(now.day)
-
-        res = es.index(index="global-stats-{}.{}.{}".format(now.year, month, day), doc_type='overall', body=responseValue)
-        es.indices.refresh(index="global-stats-{}.{}.{}".format(now.year, month, day))
+        res = es.index(index=os.environ.get("GLOBAL_INDEX"), doc_type='overall', body=responseValue)
+        es.indices.refresh(index=os.environ.get("GLOBAL_INDEX"))
 
 
 
