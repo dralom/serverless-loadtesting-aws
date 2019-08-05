@@ -24,7 +24,7 @@ provider:
   profile: ${env:AWS_PROFILE_SERVERLESS}
   memorySize: 3008
   versionFunctions: true
-  timeout: 300
+  timeout: 900
   apiKeys:
     - free:
         - SomeRandomApiKey
