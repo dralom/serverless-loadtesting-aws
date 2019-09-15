@@ -348,7 +348,7 @@ resources:
     NotifySqsQueue:
       Type: AWS::SQS::Queue
       Properties:
-        VisibilityTimeout: 300
+        VisibilityTimeout: 900
         QueueName:
           Fn::Join:
             - '-'
@@ -358,7 +358,7 @@ resources:
     PostResultSqsQueue:
       Type: AWS::SQS::Queue
       Properties:
-        VisibilityTimeout: 300
+        VisibilityTimeout: 900
         QueueName:
           Fn::Join:
             - '-'
@@ -368,7 +368,7 @@ resources:
     StartLoadTestSqsQueue1:
       Type: AWS::SQS::Queue
       Properties:
-        VisibilityTimeout: 300
+        VisibilityTimeout: 900
         QueueName:
           Fn::Join:
             - '-'
@@ -378,7 +378,7 @@ resources:
     StartLoadTestSqsQueue2:
       Type: AWS::SQS::Queue
       Properties:
-        VisibilityTimeout: 300
+        VisibilityTimeout: 900
         QueueName:
           Fn::Join:
             - '-'
@@ -388,7 +388,7 @@ resources:
     StartLoadTestSqsQueue3:
       Type: AWS::SQS::Queue
       Properties:
-        VisibilityTimeout: 300
+        VisibilityTimeout: 900
         QueueName:
           Fn::Join:
             - '-'
@@ -398,7 +398,7 @@ resources:
     StartLoadTestSqsQueue4:
       Type: AWS::SQS::Queue
       Properties:
-        VisibilityTimeout: 300
+        VisibilityTimeout: 900
         QueueName:
           Fn::Join:
             - '-'
@@ -408,7 +408,7 @@ resources:
     StartLoadTestSqsQueue5:
       Type: AWS::SQS::Queue
       Properties:
-        VisibilityTimeout: 300
+        VisibilityTimeout: 900
         QueueName:
           Fn::Join:
             - '-'
@@ -418,7 +418,7 @@ resources:
     StartLoadTestSqsQueue6:
       Type: AWS::SQS::Queue
       Properties:
-        VisibilityTimeout: 300
+        VisibilityTimeout: 900
         QueueName:
           Fn::Join:
             - '-'
@@ -428,7 +428,7 @@ resources:
     StartLoadTestSqsQueue7:
       Type: AWS::SQS::Queue
       Properties:
-        VisibilityTimeout: 300
+        VisibilityTimeout: 900
         QueueName:
           Fn::Join:
             - '-'
@@ -438,7 +438,7 @@ resources:
     StartLoadTestSqsQueue8:
       Type: AWS::SQS::Queue
       Properties:
-        VisibilityTimeout: 300
+        VisibilityTimeout: 900
         QueueName:
           Fn::Join:
             - '-'
@@ -448,7 +448,7 @@ resources:
     StartLoadTestSqsQueue9:
       Type: AWS::SQS::Queue
       Properties:
-        VisibilityTimeout: 300
+        VisibilityTimeout: 900
         QueueName:
           Fn::Join:
             - '-'
@@ -458,7 +458,7 @@ resources:
     StartLoadTestSqsQueue10:
       Type: AWS::SQS::Queue
       Properties:
-        VisibilityTimeout: 300
+        VisibilityTimeout: 900
         QueueName:
           Fn::Join:
             - '-'
@@ -496,7 +496,7 @@ resources:
     SqsDeadLetterQueue:
       Type: AWS::SQS::Queue
       Properties:
-        VisibilityTimeout: 300
+        VisibilityTimeout: 900
         QueueName:
           Fn::Join:
             - '-'
