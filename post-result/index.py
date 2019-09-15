@@ -45,7 +45,7 @@ def start(event, context):
         responseValue["stats"]["max_response_time"] = float(requests["max_response_time"])
         responseValue["stats"]["total_rps"] = float(requests["total_rps"])
         responseValue["stats"]["total_rpm"] = float(requests["total_rps"])
-        responseValue["input"]["threadNumber"] = str(responseValue["input"]["threadCount"]).split(responseValue["input"]["requestId"])[0]
+        responseValue["input"]["threadNumber"] = str(responseValue["input"]["threadCount"]).split(responseValue["input"]["requestId"])[0][:-1]
 
         res = es.index(index=os.environ.get("GLOBAL_INDEX"), doc_type='overall', body=responseValue)
         es.indices.refresh(index=os.environ.get("GLOBAL_INDEX"))
@@ -64,7 +64,7 @@ def start(event, context):
                     "threadCount": responseValue["input"]["threadCount"],
                     "url": responseValue["input"]["url"],
                     "path": responseValue["input"]["path"],
-                    "threadNumber": str(responseValue["input"]["threadCount"]).split(responseValue["input"]["requestId"])[0]
+                    "threadNumber": str(responseValue["input"]["threadCount"]).split(responseValue["input"]["requestId"])[0][:-1]
                 }
             }
             for resp in response_times
